@@ -1,0 +1,4 @@
+Requires env var 
+AMQP_URI
+AMQP_UPLOAD_RECEIVED_QUEUE 
+BLOB_CONNECTION_STRING ?? defaults to Development storage
