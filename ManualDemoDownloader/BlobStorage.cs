@@ -15,7 +15,7 @@ namespace ManualUpload
     public interface IBlobStorage
     {
         Task<string> UploadToBlob(string filePath);
-        Task UploadToBlob(string blobName, string filePath);
+        Task<string> UploadToBlob(string blobName, string filePath);
     }
 
     class BlobStorage : IBlobStorage
@@ -45,7 +45,11 @@ namespace ManualUpload
             _containerClient = client;
         }
 
-        public async Task UploadToBlob(string blobName, string filePath)
+        /// <summary>
+        /// Upload a file to a blob
+        /// </summary>
+        /// <returns>the absolute uri to the blob</returns>
+        public async Task<string> UploadToBlob(string blobName, string filePath)
         {
             var client = _containerClient.GetBlobClient(blobName);
             using (FileStream stream = File.OpenRead(filePath))
@@ -53,17 +57,18 @@ namespace ManualUpload
                 await client.UploadAsync(stream);
                 _logger.LogInformation($"Uploaded {filePath} to blob#{blobName}");
             }
+
+            return client.Uri.AbsoluteUri;
         }
 
         /// <summary>
         /// Upload a file to a new blob, created by a unique GUID.
         /// </summary>
-        /// <returns>the GUID used as the blob's name</returns>
+        /// <returns>the absolute uri to the blob</returns>
         public async Task<string> UploadToBlob(string filePath)
         {
             string guid = new Guid().ToString();
-            await UploadToBlob(guid, filePath);
-            return guid;
+            return await UploadToBlob(guid, filePath);
         }
     }
 }

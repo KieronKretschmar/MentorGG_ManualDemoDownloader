@@ -81,11 +81,11 @@ namespace ManualUpload.Controllers
                     // Rename by adding original file extension
                     var newFilePath = localFilePath + fileExtension;
                     File.Move(localFilePath, newFilePath);
-                    await _blobStorage.UploadToBlob(file.LocalFileName, newFilePath);
+                    var blobLocation = await _blobStorage.UploadToBlob(file.LocalFileName, newFilePath);
 
                     var model = new GathererTransferModel
                     {
-                        DownloadUrl = newFilePath,
+                        DownloadUrl = blobLocation,
                         MatchDate = DateTime.UtcNow,
                         UploaderId = playerId,
                         Source = Source.ManualUpload,
