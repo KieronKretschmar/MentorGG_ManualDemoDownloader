@@ -37,10 +37,7 @@ namespace ManualUpload
             _logger = logger;
 
             var client = new BlobContainerClient(connectionString, CONTAINER_NAME);
-            client.CreateIfNotExists();
-
-            //TODO handle case in which container is already created
-            //At least check if client is still a correct assignemnt or if the old one needs to be queried for
+            client.CreateIfNotExists(PublicAccessType.Blob);
 
             _containerClient = client;
         }
