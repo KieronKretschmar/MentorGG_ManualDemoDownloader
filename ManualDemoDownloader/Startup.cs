@@ -33,7 +33,8 @@ namespace ManualUpload
             });
 
 
-            services.AddApiVersioning(o => {
+            services.AddApiVersioning(o =>
+            {
                 o.ReportApiVersions = true;
                 o.AssumeDefaultVersionWhenUnspecified = true;
                 o.DefaultApiVersion = new ApiVersion(1, 0);
@@ -42,6 +43,14 @@ namespace ManualUpload
             var AMQP_URI = Configuration.GetValue<string>("AMQP_URI") ?? throw new ArgumentNullException("Environment variable AMQP_URI is not set!");
             var AMQP_UPLOAD_RECEIVED_QUEUE = Configuration.GetValue<string>("AMQP_UPLOAD_RECEIVED_QUEUE") ?? throw new ArgumentNullException("Environment variable AMQP_UPLOAD_RECEIVED_QUEUE is not set!");
             var demoCentralConnection = new QueueConnection(AMQP_URI, AMQP_UPLOAD_RECEIVED_QUEUE);
+
+            string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTIO_STRING is not set!");
+
+
+            services.AddSingleton<IBlobStorage, BlobStorage>(services =>
+            {
+                return new BlobStorage(BLOB_CONNECTION_STRING, services.GetRequiredService<ILogger<BlobStorage>>());
+            });
 
             services.AddHostedService<IDemoCentral>(services =>
             {
