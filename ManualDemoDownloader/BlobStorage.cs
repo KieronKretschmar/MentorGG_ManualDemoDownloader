@@ -18,7 +18,7 @@ namespace ManualUpload
         Task<string> UploadToBlob(string blobName, string filePath);
     }
 
-    class BlobStorage : IBlobStorage
+    public class BlobStorage : IBlobStorage
     {
         ILogger<BlobStorage> _logger;
         private readonly BlobContainerClient _containerClient;

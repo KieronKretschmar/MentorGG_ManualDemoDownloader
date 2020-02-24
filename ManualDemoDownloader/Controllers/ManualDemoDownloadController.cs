@@ -40,11 +40,9 @@ namespace ManualUpload.Controllers
         }
 
         [HttpPost("Manual")]
-        // POST api//trusted/Upload/Manual
-        public async Task<ActionResult> PostDemo()
+        // POST api//trusted/Upload/Manual/<steamid>
+        public async Task<ActionResult> PostDemo(long steamId)
         {
-            var playerId = long.Parse(User.Identity.Name);
-
             // Check if the request contains multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
             {
@@ -78,16 +76,14 @@ namespace ManualUpload.Controllers
                         continue;
                     }
 
-                    // Rename by adding original file extension
-                    var newFilePath = localFilePath + fileExtension;
-                    File.Move(localFilePath, newFilePath);
-                    var blobLocation = await _blobStorage.UploadToBlob(file.LocalFileName, newFilePath);
+                    var filePathWithExtension = localFilePath + fileExtension;
+                    var blobLocation = await _blobStorage.UploadToBlob(Path.GetFileName(filePathWithExtension), localFilePath);
 
                     var model = new GathererTransferModel
                     {
                         DownloadUrl = blobLocation,
                         MatchDate = DateTime.UtcNow,
-                        UploaderId = playerId,
+                        UploaderId = steamId,
                         Source = Source.ManualUpload,
                         UploadType = UploadType.ManualUserUpload
                     };
@@ -95,12 +91,12 @@ namespace ManualUpload.Controllers
                     _demoCentral.PublishMessage(new Guid().ToString(), model);
                 }
 
-                _logger.LogInformation($"New manual upload from {playerId}");
+                _logger.LogInformation($"New manual upload from {steamId}");
                 return new OkResult();
             }
             catch (Exception e)
             {
-                _logger.LogError($"Could not upload manually from {playerId}, because of {e.Message}", e);
+                _logger.LogError($"Could not upload manually from {steamId}, because of {e.Message}", e);
                 return new StatusCodeResult(500);
             }
         }
