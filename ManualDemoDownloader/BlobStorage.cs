@@ -29,11 +29,8 @@ namespace ManualUpload
         /// Connects to blob storage and creates a blob container.
         /// </summary>
         /// <param name="configuration"></param>
-        public BlobStorage(IConfiguration configuration, ILogger<BlobStorage> logger)
+        public BlobStorage(string connectionString, ILogger<BlobStorage> logger)
         {
-            string connectionString = configuration.GetValue<string>(
-                "BLOB_CONNECTION_STRING")?? "UseDevelopmentStorage=true;";
-
             _logger = logger;
 
             var client = new BlobContainerClient(connectionString, CONTAINER_NAME);
