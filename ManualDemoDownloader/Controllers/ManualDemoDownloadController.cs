@@ -26,17 +26,17 @@ namespace ManualUpload.Controllers
         };
 
         public static readonly int MaxFilesPerUpload = 5;
+        private readonly string _tempDirectory = "/tmp";
+
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
         private readonly IDemoCentral _demoCentral;
-        private readonly string _tempDirectory;
 
-        public ManualDemoDownloadController(ILogger<ManualDemoDownloadController> logger, IBlobStorage blobStorage, IConfiguration configuration, IDemoCentral demoCentral)
+        public ManualDemoDownloadController(ILogger<ManualDemoDownloadController> logger, IBlobStorage blobStorage, IDemoCentral demoCentral)
         {
             _logger = logger;
             _blobStorage = blobStorage;
             _demoCentral = demoCentral;
-            _tempDirectory = configuration.GetValue<string>("TEMP_DIRECTORY");
         }
 
         [HttpPost("Manual")]
