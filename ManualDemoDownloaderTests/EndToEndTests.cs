@@ -17,7 +17,7 @@ namespace ManualDemoDownloaderTests
     [TestClass]
     public class EndToEndTests
     {
-
+        [Ignore]
         [TestMethod]
         public void ControllerRequestCreatesNewBlobInStorage()
         {
