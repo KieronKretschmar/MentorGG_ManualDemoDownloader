@@ -44,7 +44,7 @@ namespace ManualUpload
             var AMQP_UPLOAD_RECEIVED_QUEUE = Configuration.GetValue<string>("AMQP_UPLOAD_RECEIVED_QUEUE") ?? throw new ArgumentNullException("Environment variable AMQP_UPLOAD_RECEIVED_QUEUE is not set!");
             var demoCentralConnection = new QueueConnection(AMQP_URI, AMQP_UPLOAD_RECEIVED_QUEUE);
 
-            string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTIO_STRING is not set!");
+            string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTION_STRING is not set!");
 
 
             services.AddSingleton<IBlobStorage, BlobStorage>(services =>
