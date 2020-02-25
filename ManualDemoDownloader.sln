@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitCommunicationLib", "R
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManualDemoDownloader", "ManualDemoDownloader\ManualDemoDownloader.csproj", "{55425DAF-8C2C-47B2-98C7-4E933E8FBA8B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManualDemoDownloaderTests", "ManualDemoDownloaderTests\ManualDemoDownloaderTests.csproj", "{FF9F9076-F0E4-4A9E-A845-7B617A12D8D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{55425DAF-8C2C-47B2-98C7-4E933E8FBA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55425DAF-8C2C-47B2-98C7-4E933E8FBA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55425DAF-8C2C-47B2-98C7-4E933E8FBA8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF9F9076-F0E4-4A9E-A845-7B617A12D8D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF9F9076-F0E4-4A9E-A845-7B617A12D8D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF9F9076-F0E4-4A9E-A845-7B617A12D8D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF9F9076-F0E4-4A9E-A845-7B617A12D8D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
