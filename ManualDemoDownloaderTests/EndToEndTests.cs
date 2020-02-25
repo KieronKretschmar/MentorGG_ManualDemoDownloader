@@ -21,14 +21,15 @@ namespace ManualDemoDownloaderTests
         [TestMethod]
         public void ControllerRequestCreatesNewBlobInStorage()
         {
-            IConfiguration testConfiguration = new ConfigurationBuilder().AddEnvironmentVariables("test_").Build();
-            var testBlobStorage = new BlobStorage(testConfiguration, new TestLogger<BlobStorage>());
+            var testBlobConnectionString = "UseDevelopmentStorage=true";
+            var testBlobStorage = new BlobStorage(testBlobConnectionString, new TestLogger<BlobStorage>());
             var mockDemoCentral = new Mock<IDemoCentral>();
 
             var testDemoPath = @"C:\Users\Lasse\source\repos\ManualDemoDownloader\ManualDemoDownloaderTests\TestData\TestDemo_Valve2.dem.bz2";
             string testDemoFileName = Path.GetFileName(testDemoPath);
+            var testSteamId = 1234;
             
-            var test = new ManualDemoDownloadController(new TestLogger<ManualDemoDownloadController>(), testBlobStorage, testConfiguration, mockDemoCentral.Object);
+            var test = new ManualDemoDownloadController(new TestLogger<ManualDemoDownloadController>(), testBlobStorage, mockDemoCentral.Object);
 
             //SET UP Request
             HttpRequestMessage testRequest = new HttpRequestMessage(HttpMethod.Post,"test-uri");
@@ -42,13 +43,12 @@ namespace ManualDemoDownloaderTests
             test.Request = testRequest;
             
             //ACT
-            test.PostDemo().Wait();
+            test.PostDemo(testSteamId).Wait();
 
 
             //ASSERT 
             //New blob is created
-            var blob = new BlobServiceClient(testConfiguration.GetValue<string>("BLOB_CONNECTION_STRING"))
-                .GetBlobContainerClient("manual-upload").GetBlobClient(testDemoFileName);
+            var blob = new BlobServiceClient(testBlobConnectionString).GetBlobContainerClient("manual-upload").GetBlobClient(testDemoFileName);
 
             Assert.IsTrue(blob.Exists());
 
