@@ -28,7 +28,8 @@ namespace ManualUpload
 
             services.AddLogging(o =>
             {
-                o.AddConsole();
+                var timeStampformat = "[yyyy-MM-dd HH:mm:ss zzz] ";
+                o.AddConsole(o => o.TimestampFormat = timeStampformat);
                 o.AddDebug();
             });
 
