@@ -3,7 +3,7 @@
 Accepts manual uploads from the webapp and stores the files in blobstorage.
 
 ### Single operation
- If `POST`-Request is made to the `ManualDemoDownloadController`, the request first get checked for being a multipart request, before a temporary directory at 
+ If `POST`-Request is made to the ManualDemoDownloadController, the request first get checked for being a multipart request, before a temporary directory at 
 `/tmp` is created.
 
 The uploaded file is then checked for its extension. If it is an allowed type, then the file is uploaded to a blob in the storage account specefied by the 
