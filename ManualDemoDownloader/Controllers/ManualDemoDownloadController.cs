@@ -89,9 +89,9 @@ namespace ManualUpload.Controllers
                     };
 
                     _demoCentral.PublishMessage(new Guid().ToString(), model);
+                    _logger.LogInformation($"New manual upload from {steamId}");
                 }
 
-                _logger.LogInformation($"New manual upload from {steamId}");
                 return new OkResult();
             }
             catch (Exception e)
