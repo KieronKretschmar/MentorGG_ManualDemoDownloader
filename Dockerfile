@@ -1,22 +1,34 @@
-#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
+# ===============
+# BUILD IMAGE
+# ===============
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
-WORKDIR /src
-COPY ["ManualUpload.csproj", ""]
-RUN dotnet restore "./ManualUpload.csproj"
-COPY . .
-WORKDIR "/src/."
-RUN dotnet build "ManualUpload.csproj" -c Release -o /app/build
+# Set the project name
+ENV PROJ "ManualDemoDownloader"
 
-FROM build AS publish
-RUN dotnet publish "ManualUpload.csproj" -c Release -o /app/publish
+# Copy csproj and restore as distinct layers
+WORKDIR /app/RabbitCommunicationLib
+COPY ./RabbitCommunicationLib/*.csproj ./
+RUN dotnet restore
 
-FROM base AS final
+
+WORKDIR /app/$PROJ
+COPY ./$PROJ/*.csproj ./
+RUN dotnet restore
+
+# Copy everything else and build
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "ManualUpload.dll"]
+COPY ./RabbitCommunicationLib ./RabbitCommunicationLib
+COPY ./$PROJ/ ./$PROJ
+
+RUN dotnet publish $PROJ/ -c Release -o out
+
+# ===============
+# RUNTIME IMAGE
+# ===============
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/out .
+ENTRYPOINT ["dotnet", "ManualDemoDownloader.dll"]
