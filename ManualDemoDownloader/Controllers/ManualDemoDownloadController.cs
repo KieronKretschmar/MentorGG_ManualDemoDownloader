@@ -43,6 +43,7 @@ namespace ManualUpload.Controllers
         // POST api/v{version}/demo/<steamId>
         public async Task<ActionResult> ReceiveDemoAsync(long steamId)
         {
+            _logger.LogInformation($"Receiving Demo associated with SteamId: [ {steamId} ]");
             // Check if the request contains multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
             {
@@ -91,12 +92,12 @@ namespace ManualUpload.Controllers
                     _demoCentral.PublishMessage(new Guid().ToString(), model);
                 }
 
-                _logger.LogInformation($"New manual upload from {steamId}");
+                _logger.LogInformation($"New manual upload from SteamId: [ {steamId} ]");
                 return new OkResult();
             }
             catch (Exception e)
             {
-                _logger.LogError($"Could not upload manually from {steamId}, because of {e.Message}", e);
+                _logger.LogError($"Could not upload manually from SteamId: [ {steamId} ], because of {e.Message}", e);
                 return new StatusCodeResult(500);
             }
         }
