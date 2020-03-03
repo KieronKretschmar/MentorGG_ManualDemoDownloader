@@ -42,8 +42,8 @@ namespace ManualUpload.Controllers
         }
 
         [HttpPost]
-        // POST api/v{version}/demo?steamId=<steamId>
-        public async Task<ActionResult> ReceiveDemoAsync(long steamId)
+        // POST api/v{version}/demo
+        public async Task<ActionResult> ReceiveDemoAsync([FromForm]long steamId)
         {
             if (steamId == 0)
             {
