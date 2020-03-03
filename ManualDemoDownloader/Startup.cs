@@ -1,5 +1,4 @@
 using System;
-using ManualUpload.Communication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -7,8 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RabbitCommunicationLib.Interfaces;
+using RabbitCommunicationLib.Producer;
 using RabbitCommunicationLib.Queues;
-
+using RabbitCommunicationLib.TransferModels;
 
 namespace ManualUpload
 {
@@ -47,14 +48,14 @@ namespace ManualUpload
             string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTION_STRING is not set!");
 
 
-            services.AddSingleton<IBlobStorage, BlobStorage>(services =>
+            services.AddSingleton<IBlobStorage, BlobStorage>(factory =>
             {
-                return new BlobStorage(BLOB_CONNECTION_STRING, services.GetRequiredService<ILogger<BlobStorage>>());
+                return new BlobStorage(BLOB_CONNECTION_STRING, factory.GetRequiredService<ILogger<BlobStorage>>());
             });
 
-            services.AddHostedService<IDemoCentral>(services =>
+            services.AddSingleton<IProducer<DemoEntryInstructions>>(factory =>
             {
-                return new DemoCentral(demoCentralConnection);
+                return new Producer<DemoEntryInstructions>(demoCentralConnection);
             });
         }
 

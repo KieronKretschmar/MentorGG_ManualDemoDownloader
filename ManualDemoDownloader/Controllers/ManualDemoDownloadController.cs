@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using ManualUpload.Communication;
 using RabbitCommunicationLib.TransferModels;
 using RabbitCommunicationLib.Enums;
+using RabbitCommunicationLib.Interfaces;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ManualUpload.Controllers
 {
@@ -30,13 +29,16 @@ namespace ManualUpload.Controllers
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
-        private readonly IDemoCentral _demoCentral;
+        private readonly IProducer<DemoEntryInstructions> _demoEntry;
 
-        public ManualDemoDownloadController(ILogger<ManualDemoDownloadController> logger, IBlobStorage blobStorage, IDemoCentral demoCentral)
+        public ManualDemoDownloadController(
+            ILogger<ManualDemoDownloadController> logger,
+            IBlobStorage blobStorage,
+            IProducer<DemoEntryInstructions> demoEntry)
         {
             _logger = logger;
             _blobStorage = blobStorage;
-            _demoCentral = demoCentral;
+            _demoEntry = demoEntry;
         }
 
         [HttpPost]
@@ -80,7 +82,7 @@ namespace ManualUpload.Controllers
                     var filePathWithExtension = localFilePath + fileExtension;
                     var blobLocation = await _blobStorage.UploadToBlob(Path.GetFileName(filePathWithExtension), localFilePath);
 
-                    var model = new GathererTransferModel
+                    var model = new DemoEntryInstructions
                     {
                         DownloadUrl = blobLocation,
                         MatchDate = DateTime.UtcNow,
@@ -89,7 +91,7 @@ namespace ManualUpload.Controllers
                         UploadType = UploadType.ManualUserUpload
                     };
 
-                    _demoCentral.PublishMessage(new Guid().ToString(), model);
+                    _demoEntry.PublishMessage(new Guid().ToString(), model);
                 }
 
                 _logger.LogInformation($"New manual upload from SteamId: [ {steamId} ]");
