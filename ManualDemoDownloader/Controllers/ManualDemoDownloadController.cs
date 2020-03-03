@@ -42,9 +42,15 @@ namespace ManualUpload.Controllers
         }
 
         [HttpPost]
-        // POST api/v{version}/demo/<steamId>
+        // POST api/v{version}/demo?steamId=<steamId>
         public async Task<ActionResult> ReceiveDemoAsync(long steamId)
         {
+            if (steamId == 0)
+            {
+                _logger.LogWarning("Received POST without SteamId specified");
+                return new BadRequestResult();
+            }
+
             _logger.LogInformation($"Receiving Demo associated with SteamId: [ {steamId} ]");
             // Check if the request contains multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
