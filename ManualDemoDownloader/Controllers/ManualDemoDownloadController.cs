@@ -13,7 +13,7 @@ using RabbitCommunicationLib.Enums;
 namespace ManualUpload.Controllers
 {
     [ApiVersion("1")]
-    [Route("v{version:apiVersion}/public")]
+    [Route("v{version:apiVersion}/demo")]
     [ApiController]
     public class ManualDemoDownloadController : BaseApiController
     {
@@ -39,9 +39,9 @@ namespace ManualUpload.Controllers
             _demoCentral = demoCentral;
         }
 
-        [HttpPost("Manual")]
-        // POST api//trusted/Upload/Manual/<steamid>
-        public async Task<ActionResult> PostDemo(long steamId)
+        [HttpPost]
+        // POST api/v{version}/demo/<steamId>
+        public async Task<ActionResult> ReceiveDemoAsync(long steamId)
         {
             // Check if the request contains multipart/form-data.
             if (!Request.Content.IsMimeMultipartContent())
