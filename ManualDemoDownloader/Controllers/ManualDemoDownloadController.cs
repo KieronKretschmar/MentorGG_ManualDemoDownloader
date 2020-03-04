@@ -28,12 +28,12 @@ namespace ManualUpload.Controllers
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
-        private readonly IProducer<DemoEntryInstructions> _demoEntry;
+        private readonly IProducer<DemoInsertInstruction> _demoEntry;
 
         public ManualDemoDownloadController(
             ILogger<ManualDemoDownloadController> logger,
             IBlobStorage blobStorage,
-            IProducer<DemoEntryInstructions> demoEntry)
+            IProducer<DemoInsertInstruction> demoEntry)
         {
             _logger = logger;
             _blobStorage = blobStorage;
@@ -82,7 +82,7 @@ namespace ManualUpload.Controllers
                     blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
                 }
 
-                var model = new DemoEntryInstructions
+                var model = new DemoInsertInstruction
                 {
                     DownloadUrl = blobLocation,
                     MatchDate = DateTime.UtcNow,
