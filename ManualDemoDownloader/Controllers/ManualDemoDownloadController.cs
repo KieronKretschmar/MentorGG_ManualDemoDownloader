@@ -1,21 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using ManualUpload.Communication;
 using RabbitCommunicationLib.TransferModels;
 using RabbitCommunicationLib.Enums;
+using RabbitCommunicationLib.Interfaces;
+using System.Threading.Tasks;
+using System.Net.Http;
+using System;
+using Microsoft.AspNetCore.Mvc;
+using ManualDemoDownloader.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace ManualUpload.Controllers
 {
-    [ApiVersion("1")]
-    [Route("v{version:apiVersion}/public")]
-    [ApiController]
-    public class ManualDemoDownloadController : BaseApiController
+    [Route("v{version:apiVersion}/demo")]
+    public class ManualDemoDownloadController : Controller
     {
         public static readonly List<string> AllowedFileExtensions = new List<string>
         {
@@ -26,79 +25,79 @@ namespace ManualUpload.Controllers
         };
 
         public static readonly int MaxFilesPerUpload = 5;
-        private readonly string _tempDirectory = "/tmp";
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
-        private readonly IDemoCentral _demoCentral;
+        private readonly IProducer<DemoEntryInstructions> _demoEntry;
 
-        public ManualDemoDownloadController(ILogger<ManualDemoDownloadController> logger, IBlobStorage blobStorage, IDemoCentral demoCentral)
+        public ManualDemoDownloadController(
+            ILogger<ManualDemoDownloadController> logger,
+            IBlobStorage blobStorage,
+            IProducer<DemoEntryInstructions> demoEntry)
         {
             _logger = logger;
             _blobStorage = blobStorage;
-            _demoCentral = demoCentral;
+            _demoEntry = demoEntry;
         }
 
-        [HttpPost("Manual")]
-        // POST api//trusted/Upload/Manual/<steamid>
-        public async Task<ActionResult> PostDemo(long steamId)
+        [HttpPost]
+        // POST api/v{version}/demo
+        public async Task<ActionResult<UploadResultModel>> ReceiveDemoAsync([FromForm]long steamId, [FromForm]IFormFileCollection demos)
         {
-            // Check if the request contains multipart/form-data.
-            if (!Request.Content.IsMimeMultipartContent())
+            if (steamId == 0)
             {
-                return new UnsupportedMediaTypeResult();
+                _logger.LogWarning("Received POST without SteamId specified");
+                return StatusCode(400);
             }
 
-            Directory.CreateDirectory(_tempDirectory);
-            var provider = new MultipartFormDataStreamProvider(_tempDirectory);
-
-            try
+            if (demos == null || demos.Count == 0)
             {
-                // Read the form data.
-                await Request.Content.ReadAsMultipartAsync(provider);
+                _logger.LogWarning("Received POST without Demos specified");
+                return StatusCode(400);
+            }
+            else if (demos.Count > MaxFilesPerUpload)
+            {
+                _logger.LogWarning($"Received POST without too many Demos specified, Maximum is [ {MaxFilesPerUpload}]");
+                return StatusCode(400);
+            }
 
-                // Check if the request contains too many matches
-                if (provider.FileData.Count > MaxFilesPerUpload)
+            _logger.LogInformation($"Receiving Demo(s) associated with SteamId: [ {steamId} ]");
+
+            int successfulCount = 0;
+            foreach (var demo in demos)
+            {
+                string ext = Path.GetExtension(demo.FileName);
+                if (!AllowedFileExtensions.Contains(ext))
                 {
-                    return new BadRequestResult();
+                    _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
+                    continue;
                 }
 
-                // This illustrates how to get the file names.
-                foreach (MultipartFileData file in provider.FileData)
+                string blobName = Guid.NewGuid().ToString() + ext;
+
+                string blobLocation;
+                using (var stream = Stream.Null)
                 {
-                    var localFilePath = Path.Combine(_tempDirectory, file.LocalFileName);
-
-                    // Abort if file extension is not supported
-                    var fileExtension = Path.GetExtension(file.Headers.ContentDisposition.FileName);
-                    if (!AllowedFileExtensions.Contains(fileExtension))
-                    {
-                        File.Delete(localFilePath);
-                        continue;
-                    }
-
-                    var filePathWithExtension = localFilePath + fileExtension;
-                    var blobLocation = await _blobStorage.UploadToBlob(Path.GetFileName(filePathWithExtension), localFilePath);
-
-                    var model = new GathererTransferModel
-                    {
-                        DownloadUrl = blobLocation,
-                        MatchDate = DateTime.UtcNow,
-                        UploaderId = steamId,
-                        Source = Source.ManualUpload,
-                        UploadType = UploadType.ManualUserUpload
-                    };
-
-                    _demoCentral.PublishMessage(new Guid().ToString(), model);
+                    await demo.CopyToAsync(stream);
+                    blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
                 }
 
-                _logger.LogInformation($"New manual upload from {steamId}");
-                return new OkResult();
+                var model = new DemoEntryInstructions
+                {
+                    DownloadUrl = blobLocation,
+                    MatchDate = DateTime.UtcNow,
+                    UploaderId = steamId,
+                    Source = Source.ManualUpload,
+                    UploadType = UploadType.ManualUserUpload
+                };
+
+                _demoEntry.PublishMessage(new Guid().ToString(), model);
+
+                successfulCount++;
             }
-            catch (Exception e)
-            {
-                _logger.LogError($"Could not upload manually from {steamId}, because of {e.Message}", e);
-                return new StatusCodeResult(500);
-            }
+
+            _logger.LogInformation($"New upload(s) from SteamId: [ {steamId} ]");
+            return new UploadResultModel{ DemoCount = successfulCount };
         }
     }
 }

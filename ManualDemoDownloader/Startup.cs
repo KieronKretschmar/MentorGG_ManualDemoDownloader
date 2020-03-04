@@ -1,14 +1,16 @@
 using System;
-using ManualUpload.Communication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RabbitCommunicationLib.Interfaces;
+using RabbitCommunicationLib.Producer;
 using RabbitCommunicationLib.Queues;
-
+using RabbitCommunicationLib.TransferModels;
 
 namespace ManualUpload
 {
@@ -24,21 +26,25 @@ namespace ManualUpload
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
-
-            services.AddLogging(o =>
+            services.Configure<FormOptions>(x =>
             {
-                o.AddConsole();
-                o.AddDebug();
+                x.MultipartBodyLengthLimit = 536870900;
+            });
+
+            services.AddControllers()
+                .AddNewtonsoftJson(x => x.UseMemberCasing());
+
+            services.AddLogging(options =>
+            {
+                options.AddConsole(o =>
+                {
+                    o.TimestampFormat = "[yyyy-MM-dd HH:mm:ss zzz] ";
+                });
             });
 
 
-            services.AddApiVersioning(o =>
-            {
-                o.ReportApiVersions = true;
-                o.AssumeDefaultVersionWhenUnspecified = true;
-                o.DefaultApiVersion = new ApiVersion(1, 0);
-            });
+            services.AddApiVersioning();
+
 
             var AMQP_URI = Configuration.GetValue<string>("AMQP_URI") ?? throw new ArgumentNullException("Environment variable AMQP_URI is not set!");
             var AMQP_UPLOAD_RECEIVED_QUEUE = Configuration.GetValue<string>("AMQP_UPLOAD_RECEIVED_QUEUE") ?? throw new ArgumentNullException("Environment variable AMQP_UPLOAD_RECEIVED_QUEUE is not set!");
@@ -47,15 +53,18 @@ namespace ManualUpload
             string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTION_STRING is not set!");
 
 
-            services.AddSingleton<IBlobStorage, BlobStorage>(services =>
+            services.AddSingleton<IBlobStorage, BlobStorage>(factory =>
             {
-                return new BlobStorage(BLOB_CONNECTION_STRING, services.GetRequiredService<ILogger<BlobStorage>>());
+                return new BlobStorage(
+                    BLOB_CONNECTION_STRING,
+                    factory.GetRequiredService<ILogger<BlobStorage>>());
             });
 
-            services.AddHostedService<IDemoCentral>(services =>
+            services.AddSingleton<IProducer<DemoEntryInstructions>>(factory =>
             {
-                return new DemoCentral(demoCentralConnection);
+                return new Producer<DemoEntryInstructions>(demoCentralConnection);
             });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,12 +79,11 @@ namespace ManualUpload
 
             app.UseRouting();
 
-            app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
         }
     }
 }
