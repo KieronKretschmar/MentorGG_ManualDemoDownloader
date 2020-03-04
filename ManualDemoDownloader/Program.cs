@@ -21,6 +21,11 @@ namespace ManualUpload
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+
+                    webBuilder.UseKestrel(options =>
+                    {
+                        options.Limits.MaxRequestBodySize = 536870900;
+                    });
                 });
     }
 }

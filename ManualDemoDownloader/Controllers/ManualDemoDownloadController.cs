@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System;
 using Microsoft.AspNetCore.Mvc;
+using ManualDemoDownloader.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace ManualUpload.Controllers
 {
-    [ApiVersion("1")]
     [Route("v{version:apiVersion}/demo")]
-    [ApiController]
-    public class ManualDemoDownloadController : BaseApiController
+    public class ManualDemoDownloadController : Controller
     {
         public static readonly List<string> AllowedFileExtensions = new List<string>
         {
@@ -25,7 +25,6 @@ namespace ManualUpload.Controllers
         };
 
         public static readonly int MaxFilesPerUpload = 5;
-        private readonly string _tempDirectory = "/tmp";
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
@@ -43,71 +42,62 @@ namespace ManualUpload.Controllers
 
         [HttpPost]
         // POST api/v{version}/demo
-        public async Task<ActionResult> ReceiveDemoAsync([FromForm]long steamId)
+        public async Task<ActionResult<UploadResultModel>> ReceiveDemoAsync([FromForm]long steamId, [FromForm]IFormFileCollection demos)
         {
             if (steamId == 0)
             {
                 _logger.LogWarning("Received POST without SteamId specified");
-                return new BadRequestResult();
+                return StatusCode(400);
             }
 
-            _logger.LogInformation($"Receiving Demo associated with SteamId: [ {steamId} ]");
-            // Check if the request contains multipart/form-data.
-            if (!Request.Content.IsMimeMultipartContent())
+            if (demos == null || demos.Count == 0)
             {
-                return new UnsupportedMediaTypeResult();
+                _logger.LogWarning("Received POST without Demos specified");
+                return StatusCode(400);
+            }
+            else if (demos.Count > MaxFilesPerUpload)
+            {
+                _logger.LogWarning($"Received POST without too many Demos specified, Maximum is [ {MaxFilesPerUpload}]");
+                return StatusCode(400);
             }
 
-            Directory.CreateDirectory(_tempDirectory);
-            var provider = new MultipartFormDataStreamProvider(_tempDirectory);
+            _logger.LogInformation($"Receiving Demo(s) associated with SteamId: [ {steamId} ]");
 
-            try
+            int successfulCount = 0;
+            foreach (var demo in demos)
             {
-                // Read the form data.
-                await Request.Content.ReadAsMultipartAsync(provider);
-
-                // Check if the request contains too many matches
-                if (provider.FileData.Count > MaxFilesPerUpload)
+                string ext = Path.GetExtension(demo.FileName);
+                if (!AllowedFileExtensions.Contains(ext))
                 {
-                    return new BadRequestResult();
+                    _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
+                    continue;
                 }
 
-                // This illustrates how to get the file names.
-                foreach (MultipartFileData file in provider.FileData)
+                string blobName = Guid.NewGuid().ToString() + ext;
+
+                string blobLocation;
+                using (var stream = Stream.Null)
                 {
-                    var localFilePath = Path.Combine(_tempDirectory, file.LocalFileName);
-
-                    // Abort if file extension is not supported
-                    var fileExtension = Path.GetExtension(file.Headers.ContentDisposition.FileName);
-                    if (!AllowedFileExtensions.Contains(fileExtension))
-                    {
-                        File.Delete(localFilePath);
-                        continue;
-                    }
-
-                    var filePathWithExtension = localFilePath + fileExtension;
-                    var blobLocation = await _blobStorage.UploadToBlob(Path.GetFileName(filePathWithExtension), localFilePath);
-
-                    var model = new DemoEntryInstructions
-                    {
-                        DownloadUrl = blobLocation,
-                        MatchDate = DateTime.UtcNow,
-                        UploaderId = steamId,
-                        Source = Source.ManualUpload,
-                        UploadType = UploadType.ManualUserUpload
-                    };
-
-                    _demoEntry.PublishMessage(new Guid().ToString(), model);
+                    await demo.CopyToAsync(stream);
+                    blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
                 }
 
-                _logger.LogInformation($"New manual upload from SteamId: [ {steamId} ]");
-                return new OkResult();
+                var model = new DemoEntryInstructions
+                {
+                    DownloadUrl = blobLocation,
+                    MatchDate = DateTime.UtcNow,
+                    UploaderId = steamId,
+                    Source = Source.ManualUpload,
+                    UploadType = UploadType.ManualUserUpload
+                };
+
+                _demoEntry.PublishMessage(new Guid().ToString(), model);
+
+                successfulCount++;
             }
-            catch (Exception e)
-            {
-                _logger.LogError($"Could not upload manually from SteamId: [ {steamId} ], because of {e.Message}", e);
-                return new StatusCodeResult(500);
-            }
+
+            _logger.LogInformation($"New upload(s) from SteamId: [ {steamId} ]");
+            return new UploadResultModel{ DemoCount = successfulCount };
         }
     }
 }
