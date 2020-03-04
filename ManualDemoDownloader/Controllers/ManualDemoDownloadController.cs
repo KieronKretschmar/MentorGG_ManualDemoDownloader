@@ -91,7 +91,7 @@ namespace ManualUpload.Controllers
                     UploadType = UploadType.ManualUserUpload
                 };
 
-                _demoEntry.PublishMessage(new Guid().ToString(), model);
+                _demoEntry.PublishMessage(model);
 
                 successfulCount++;
             }
