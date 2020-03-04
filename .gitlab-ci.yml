@@ -1,0 +1,28 @@
+image: docker:stable
+
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
+stages:
+    - build
+
+build:
+    stage: build
+    only:
+        - /^test-.*$/
+        #refs:
+        #    - add-gitlab-ci
+
+    # Select Docker in Docker for Gitlab Shared Runners
+    services:
+        - docker:dind
+    
+    before_script:
+        - docker info
+
+    script:
+        - SEMVER=$(echo $CI_COMMIT_TAG | cut -d "-" -f2)
+        - IMAGE_TAG=$ACR_HOST/$CI_PROJECT_NAME:$SEMVER
+        - docker build --tag $IMAGE_TAG .
+        - docker login $ACR_HOST -u $ACR_USER -p $ACR_PASSWORD
+        - docker push $IMAGE_TAG
