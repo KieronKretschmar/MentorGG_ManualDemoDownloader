@@ -60,9 +60,9 @@ namespace ManualUpload
                     factory.GetRequiredService<ILogger<BlobStorage>>());
             });
 
-            services.AddSingleton<IProducer<DemoEntryInstructions>>(factory =>
+            services.AddSingleton<IProducer<DemoInsertInstruction>>(factory =>
             {
-                return new Producer<DemoEntryInstructions>(demoCentralConnection);
+                return new Producer<DemoInsertInstruction>(demoCentralConnection);
             });
 
         }
