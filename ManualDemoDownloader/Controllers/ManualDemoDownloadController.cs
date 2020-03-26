@@ -82,6 +82,12 @@ namespace ManualUpload.Controllers
                     blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
                 }
 
+                if (blobLocation == null)
+                {
+                    _logger.LogWarning($"Failed to retrieve BlobStorage location, skipping this demo");
+                    continue;
+                }
+
                 var model = new DemoInsertInstruction
                 {
                     DownloadUrl = blobLocation,
@@ -96,7 +102,7 @@ namespace ManualUpload.Controllers
                 successfulCount++;
             }
 
-            _logger.LogInformation($"New upload(s) from SteamId: [ {steamId} ]");
+            _logger.LogInformation($"[ {successfulCount} ] New upload(s) from SteamId: [ {steamId} ]");
             return new UploadResultModel{ DemoCount = successfulCount };
         }
     }

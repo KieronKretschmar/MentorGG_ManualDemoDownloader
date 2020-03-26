@@ -53,7 +53,7 @@ namespace ManualUpload
             string BLOB_CONNECTION_STRING = Configuration.GetValue<string>("BLOB_CONNECTION_STRING") ?? throw new ArgumentNullException("Environment variable BLOB_CONNECTION_STRING is not set!");
 
 
-            services.AddSingleton<IBlobStorage, BlobStorage>(factory =>
+            services.AddTransient<IBlobStorage, BlobStorage>(factory =>
             {
                 return new BlobStorage(
                     BLOB_CONNECTION_STRING,
