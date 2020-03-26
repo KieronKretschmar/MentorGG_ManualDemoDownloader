@@ -102,7 +102,7 @@ namespace ManualUpload.Controllers
                 successfulCount++;
             }
 
-            _logger.LogInformation($"New upload(s) from SteamId: [ {steamId} ]");
+            _logger.LogInformation($"[ {successfulCount} ] New upload(s) from SteamId: [ {steamId} ]");
             return new UploadResultModel{ DemoCount = successfulCount };
         }
     }
