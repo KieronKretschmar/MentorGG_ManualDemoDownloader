@@ -78,12 +78,7 @@ namespace ManualUpload.Controllers
 
                 string blobName = Guid.NewGuid().ToString() + ext;
 
-                string blobLocation;
-                using (var stream = Stream.Null)
-                {
-                    await demo.CopyToAsync(stream);
-                    blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
-                }
+                string blobLocation = await _blobStorage.UploadBlobAsync(blobName, demo.OpenReadStream());
 
                 if (blobLocation == null)
                 {
