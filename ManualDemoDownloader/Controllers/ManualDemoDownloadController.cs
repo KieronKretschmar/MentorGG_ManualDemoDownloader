@@ -28,12 +28,12 @@ namespace ManualUpload.Controllers
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
-        private readonly IProducer<DemoInsertInstruction> _demoEntry;
+        private readonly IProducer<ManualDownloadReport> _demoEntry;
 
         public ManualDemoDownloadController(
             ILogger<ManualDemoDownloadController> logger,
             IBlobStorage blobStorage,
-            IProducer<DemoInsertInstruction> demoEntry)
+            IProducer<ManualDownloadReport> demoEntry)
         {
             _logger = logger;
             _blobStorage = blobStorage;
@@ -88,10 +88,11 @@ namespace ManualUpload.Controllers
                     continue;
                 }
 
-                var model = new DemoInsertInstruction
+                var model = new ManualDownloadReport
                 {
-                    DownloadUrl = blobLocation,
+                    BlobUrl = blobLocation,
                     MatchDate = DateTime.UtcNow,
+                    UploadDate = DateTime.UtcNow,
                     UploaderId = steamId,
                     Source = Source.ManualUpload,
                     UploadType = UploadType.ManualUserUpload
