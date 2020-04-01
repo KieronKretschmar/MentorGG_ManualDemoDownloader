@@ -10,6 +10,7 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using ManualDemoDownloader.Models;
 using Microsoft.AspNetCore.Http;
+using System.Text.RegularExpressions;
 
 namespace ManualUpload.Controllers
 {
@@ -18,6 +19,8 @@ namespace ManualUpload.Controllers
     {
         public static readonly List<string> AllowedFileExtensions = new List<string>
         {
+            ".dem.gz",
+            ".dem.bz2",
             ".bz2",
             ".dem",
             ".gz",
@@ -66,7 +69,7 @@ namespace ManualUpload.Controllers
             int successfulCount = 0;
             foreach (var demo in demos)
             {
-                string ext = Path.GetExtension(demo.FileName);
+                string ext = Regex.Match(demo.FileName, @"\..*").Value;
                 if (!AllowedFileExtensions.Contains(ext))
                 {
                     _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
