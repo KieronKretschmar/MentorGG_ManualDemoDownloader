@@ -9,6 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [0.3.0] - 2020-04-01
-- Update rabbit
+- Update Rabbit to `0.6.8`
 - Change rabbit model to ManualDownloadReport
 - Set values for UploadTime (defaulting to NOW) and UploadType in model
