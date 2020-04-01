@@ -69,7 +69,7 @@ namespace ManualUpload.Controllers
             int successfulCount = 0;
             foreach (var demo in demos)
             {
-                string ext = Regex.Match(demo.FileName, @"\..*").Value;
+                string ext = GetFullFileEnding(demo.FileName);
                 if (!AllowedFileExtensions.Contains(ext))
                 {
                     _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
@@ -108,6 +108,17 @@ namespace ManualUpload.Controllers
 
             _logger.LogInformation($"[ {successfulCount} ] New upload(s) from SteamId: [ {steamId} ]");
             return new UploadResultModel{ DemoCount = successfulCount };
+        }
+
+
+        /// <summary>
+        /// Returns the full file ending of the filePath, including double endings like ".dem.gz".
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private string GetFullFileEnding(string filePath)
+        {
+            return Regex.Match(filePath, @"\..*").Value;
         }
     }
 }
