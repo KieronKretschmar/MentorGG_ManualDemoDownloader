@@ -10,6 +10,7 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using ManualDemoDownloader.Models;
 using Microsoft.AspNetCore.Http;
+using System.Text.RegularExpressions;
 
 namespace ManualUpload.Controllers
 {
@@ -18,6 +19,8 @@ namespace ManualUpload.Controllers
     {
         public static readonly List<string> AllowedFileExtensions = new List<string>
         {
+            ".dem.gz",
+            ".dem.bz2",
             ".bz2",
             ".dem",
             ".gz",
@@ -28,12 +31,12 @@ namespace ManualUpload.Controllers
 
         private readonly ILogger<ManualDemoDownloadController> _logger;
         private readonly IBlobStorage _blobStorage;
-        private readonly IProducer<DemoInsertInstruction> _demoEntry;
+        private readonly IProducer<ManualDownloadReport> _demoEntry;
 
         public ManualDemoDownloadController(
             ILogger<ManualDemoDownloadController> logger,
             IBlobStorage blobStorage,
-            IProducer<DemoInsertInstruction> demoEntry)
+            IProducer<ManualDownloadReport> demoEntry)
         {
             _logger = logger;
             _blobStorage = blobStorage;
@@ -66,7 +69,7 @@ namespace ManualUpload.Controllers
             int successfulCount = 0;
             foreach (var demo in demos)
             {
-                string ext = Path.GetExtension(demo.FileName);
+                string ext = GetFullFileEnding(demo.FileName);
                 if (!AllowedFileExtensions.Contains(ext))
                 {
                     _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
@@ -75,12 +78,7 @@ namespace ManualUpload.Controllers
 
                 string blobName = Guid.NewGuid().ToString() + ext;
 
-                string blobLocation;
-                using (var stream = Stream.Null)
-                {
-                    await demo.CopyToAsync(stream);
-                    blobLocation = await _blobStorage.UploadBlobAsync(blobName, stream);
-                }
+                string blobLocation = await _blobStorage.UploadBlobAsync(blobName, demo.OpenReadStream());
 
                 if (blobLocation == null)
                 {
@@ -88,10 +86,11 @@ namespace ManualUpload.Controllers
                     continue;
                 }
 
-                var model = new DemoInsertInstruction
+                var model = new ManualDownloadReport
                 {
-                    DownloadUrl = blobLocation,
+                    BlobUrl = blobLocation,
                     MatchDate = DateTime.UtcNow,
+                    UploadDate = DateTime.UtcNow,
                     UploaderId = steamId,
                     Source = Source.ManualUpload,
                     UploadType = UploadType.ManualUserUpload
@@ -104,6 +103,17 @@ namespace ManualUpload.Controllers
 
             _logger.LogInformation($"[ {successfulCount} ] New upload(s) from SteamId: [ {steamId} ]");
             return new UploadResultModel{ DemoCount = successfulCount };
+        }
+
+
+        /// <summary>
+        /// Returns the full file ending of the filePath, including double endings like ".dem.gz".
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private string GetFullFileEnding(string filePath)
+        {
+            return Regex.Match(filePath, @"\..*").Value;
         }
     }
 }
