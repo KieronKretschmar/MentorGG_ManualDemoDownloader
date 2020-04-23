@@ -14,7 +14,10 @@
       "launchBrowser": true,
       "launchUrl": "weatherforecast",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AMQP_URI": "amqp://zjwbyctn:9eKT0Ejw5uEJ3sDNxJYkJn_QehYl6UxH@dove.rmq.cloudamqp.com/zjwbyctn",
+        "AMQP_UPLOAD_RECEIVED_QUEUE": "kieron_AMQP_UPLOAD_RECEIVED_QUEUE",
+        "BLOB_CONNECTION_STRING": "asdf:asdf"
       }
     },
     "ManualUpload": {
