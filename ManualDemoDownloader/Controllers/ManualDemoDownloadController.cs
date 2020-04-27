@@ -19,10 +19,8 @@ namespace ManualUpload.Controllers
     {
         public static readonly List<string> AllowedFileExtensions = new List<string>
         {
-            ".dem.gz",
-            ".dem.bz2",
-            ".bz2",
             ".dem",
+            ".bz2",
             ".gz",
             ".zip",
         };
@@ -69,7 +67,7 @@ namespace ManualUpload.Controllers
             int successfulCount = 0;
             foreach (var demo in demos)
             {
-                string ext = GetFullFileEnding(demo.FileName);
+                string ext = Path.GetExtension(demo.FileName);
                 if (!AllowedFileExtensions.Contains(ext))
                 {
                     _logger.LogWarning($"Skipping file with disallowed file extension [ {ext} ]");
